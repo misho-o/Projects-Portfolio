@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskReward — Gamified Productivity</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #08090d;
+  --bg2:        #0f1018;
+  --surface:    #141520;
+  --surface2:   #1c1e2e;
+  --surface3:   #23263a;
+  --border:     rgba(255,255,255,0.07);
+  --accent:     #7c6dfa;
+  --accent2:    #a78bfa;
+  --glow:       rgba(124,109,250,0.35);
+  --gold:       #f4c842;
+  --gold2:      #ffd97d;
+  --success:    #34d399;
+  --danger:     #f87171;
+  --warning:    #fb923c;
+  --text:       #e8eaf6;
+  --muted:      #6b6f8a;
+  --muted2:     #3a3d55;
+  --font-head:  'Syne', sans-serif;
+  --font-body:  'DM Sans', sans-serif;
+  --radius:     14px;
+  --radius-sm:  8px;
+  --sidebar:    240px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--muted2); border-radius: 99px; }
+
+/* ── Login Screen ──────────────────────────────────────────────────── */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%, rgba(124,109,250,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 30%, rgba(167,139,250,0.12) 0%, transparent 60%),
+    var(--bg);
+}
+
+/* animated grid */
+.login-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(124,109,250,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,109,250,0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridShift 20s linear infinite;
+}
+@keyframes gridShift { from { transform: translateY(0); } to { transform: translateY(60px); } }
+
+.login-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 56px 48px;
+  width: 440px;
+  max-width: 94vw;
+  box-shadow: 0 0 80px rgba(124,109,250,0.15), 0 40px 80px rgba(0,0,0,0.6);
+  animation: cardIn 0.8s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-logo {
+  font-family: var(--font-head);
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a78bfa 0%, #7c6dfa 50%, #5eead4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 4px;
+}
+
+.login-icon {
+  font-size: 2.8rem;
+  margin-bottom: 12px;
+  display: block;
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+.login-sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-bottom: 36px;
+  line-height: 1.6;
+}
+
+.login-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 20px;
+}
+.login-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+.login-input::placeholder { color: var(--muted2); }
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 15px;
+  color: #fff;
+  font-family: var(--font-head);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--glow);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.login-quote {
+  margin-top: 28px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: italic;
+  text-align: center;
+}
+
+/* ── App Layout ────────────────────────────────────────────────────── */
+#app {
+  display: none;
+  min-height: 100vh;
+}
+#app.active { display: flex; }
+
+/* ── Sidebar ───────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  padding: 28px 0;
+}
+
+.sidebar-logo {
+  padding: 0 24px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-logo-text {
+  font-family: var(--font-head);
+  font-size: 1.35rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a78bfa, #7c6dfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sidebar-logo-icon { font-size: 1.5rem; margin-right: 6px; }
+
+.nav-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  padding: 0 24px;
+  margin: 16px 0 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 24px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border-radius: 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-left: 3px solid transparent;
+  margin: 1px 0;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active {
+  background: rgba(124,109,250,0.12);
+  color: var(--accent2);
+  border-left-color: var(--accent);
+}
+.nav-icon { font-size: 1.1rem; width: 22px; text-align: center; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px 24px 0;
+  border-top: 1px solid var(--border);
+}
+
+.xp-bar-wrap {
+  background: var(--surface2);
+  border-radius: 99px;
+  height: 6px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.sidebar-user-name {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.sidebar-pts {
+  font-size: 0.78rem;
+  color: var(--gold);
+  font-weight: 600;
+}
+.sidebar-level {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Main Content ──────────────────────────────────────────────────── */
+.main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  padding: 36px 40px;
+  min-height: 100vh;
+}
+
+.page { display: none; animation: fadeUp 0.35s ease both; }
+.page.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Page Header ───────────────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+.page-title {
+  font-family: var(--font-head);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.page-subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Stat Cards ────────────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+}
+.stat-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.12); }
+
+.stat-icon { font-size: 1.6rem; margin-bottom: 10px; }
+.stat-value {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+/* ── Section Card ──────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-family: var(--font-head);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Add Task Form ─────────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.form-input, .form-select, .form-textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+.form-input::placeholder, .form-textarea::placeholder { color: var(--muted2); }
+.form-select { cursor: pointer; }
+.form-select option { background: var(--surface2); }
+.form-textarea { resize: vertical; min-height: 70px; }
+
+.priority-pills {
+  display: flex;
+  gap: 8px;
+}
+.priority-pill {
+  flex: 1;
+  padding: 9px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.priority-pill:hover { border-color: var(--accent); color: var(--text); }
+.priority-pill.active-high  { background: rgba(248,113,113,0.15); border-color: var(--danger); color: var(--danger); }
+.priority-pill.active-medium{ background: rgba(251,146,60,0.15); border-color: var(--warning); color: var(--warning); }
+.priority-pill.active-low   { background: rgba(52,211,153,0.15); border-color: var(--success); color: var(--success); }
+
+.btn-add {
+  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 28px;
+  color: #fff;
+  font-family: var(--font-head);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--glow);
+}
+
+/* ── Task List ─────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 6px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: rgba(124,109,250,0.15);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+.task-list { display: flex; flex-direction: column; gap: 10px; }
+
+.task-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.2s, border-color 0.2s, opacity 0.3s;
+  animation: taskIn 0.3s ease both;
+  position: relative;
+  overflow: hidden;
+}
+@keyframes taskIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.task-card:hover { transform: translateX(4px); border-color: rgba(255,255,255,0.12); }
+.task-card.done  { opacity: 0.5; }
+.task-card.done .task-name { text-decoration: line-through; }
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.task-card.priority-High   ::before,
+.task-card.priority-High::before { background: var(--danger); }
+.task-card.priority-Medium::before { background: var(--warning); }
+.task-card.priority-Low::before   { background: var(--success); }
+
+.task-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--muted2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  font-size: 0.7rem;
+}
+.task-check:hover { border-color: var(--success); }
+.task-check.checked { background: var(--success); border-color: var(--success); }
+.task-check.checked::after { content: '✓'; color: #fff; font-weight: 700; }
+
+.task-body { flex: 1; min-width: 0; }
+.task-name {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.task-meta span { display: flex; align-items: center; gap: 4px; }
+
+.task-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.badge-high   { background: rgba(248,113,113,0.15); color: var(--danger); }
+.badge-medium { background: rgba(251,146,60,0.15);  color: var(--warning); }
+.badge-low    { background: rgba(52,211,153,0.15);  color: var(--success); }
+.badge-overdue{ background: rgba(248,113,113,0.25); color: var(--danger); border: 1px solid var(--danger); }
+
+.task-pts {
+  font-family: var(--font-head);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--muted2);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.btn-delete:hover { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+.empty-state-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+.empty-state-text { font-size: 0.95rem; }
+
+/* ── Dashboard two-col ─────────────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+
+/* ── Badges Page ───────────────────────────────────────────────────── */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.badge-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 16px;
+  text-align: center;
+  position: relative;
+  transition: transform 0.2s, border-color 0.2s;
+  overflow: hidden;
+}
+.badge-card.earned {
+  border-color: rgba(124,109,250,0.4);
+  box-shadow: 0 0 24px rgba(124,109,250,0.1);
+}
+.badge-card.earned::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(124,109,250,0.12) 0%, transparent 70%);
+}
+.badge-card:hover.earned { transform: translateY(-4px); border-color: var(--accent); }
+.badge-card:hover:not(.earned) { transform: translateY(-2px); }
+
+.badge-card-icon {
+  font-size: 2.6rem;
+  margin-bottom: 10px;
+  display: block;
+  filter: grayscale(1) opacity(0.3);
+  transition: filter 0.3s;
+}
+.badge-card.earned .badge-card-icon { filter: none; }
+.badge-card-name {
+  font-family: var(--font-head);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.badge-card.earned .badge-card-name { color: var(--text); }
+.badge-card-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+.badge-card-req {
+  font-size: 0.7rem;
+  color: var(--accent2);
+  margin-top: 8px;
+  font-weight: 600;
+}
+.badge-locked-icon {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-size: 0.75rem;
+  opacity: 0.3;
+}
+.badge-earned-check {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── History Page ──────────────────────────────────────────────────── */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.history-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.history-table td {
+  padding: 13px 14px;
+  font-size: 0.88rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.history-table tr:hover td { background: var(--surface2); }
+.history-table .pts-cell {
+  font-family: var(--font-head);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* ── Profile / Stats Page ──────────────────────────────────────────── */
+.profile-hero {
+  background: linear-gradient(135deg, rgba(124,109,250,0.15) 0%, rgba(99,102,241,0.08) 100%);
+  border: 1px solid rgba(124,109,250,0.25);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.profile-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #6366f1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 30px var(--glow);
+}
+.profile-name {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.profile-level {
+  font-size: 0.88rem;
+  color: var(--accent2);
+  font-weight: 600;
+  margin-top: 4px;
+}
+.profile-xp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.profile-xp-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--surface3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.profile-xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px;
+  transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+.profile-xp-label { font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.level-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.level-card.current-level {
+  border-color: var(--accent);
+  background: rgba(124,109,250,0.08);
+}
+.level-card-num {
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.level-card.current-level .level-card-num { color: var(--accent2); }
+.level-card.unlocked .level-card-num { color: var(--text); }
+.level-card-pts { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+.level-card.current-level .level-card-pts { color: var(--accent); }
+
+/* ── Toast ─────────────────────────────────────────────────────────── */
+#toast-container {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.toast {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  font-size: 0.88rem;
+  min-width: 260px;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: toastIn 0.35s cubic-bezier(0.16,1,0.3,1) both;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.toast.out { animation: toastOut 0.3s ease forwards; }
+@keyframes toastOut {
+  to { opacity: 0; transform: translateX(40px); }
+}
+.toast-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.toast-body { flex: 1; }
+.toast-title { font-family: var(--font-head); font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.toast-msg   { color: var(--muted); font-size: 0.8rem; }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.info    { border-left: 3px solid var(--accent); }
+.toast.warning { border-left: 3px solid var(--warning); }
+
+/* ── Reward Pop ────────────────────────────────────────────────────── */
+#reward-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  display: none;
+}
+#reward-modal.open { display: flex; }
+.reward-box {
+  background: var(--surface);
+  border: 1px solid rgba(124,109,250,0.4);
+  border-radius: 24px;
+  padding: 44px 48px;
+  text-align: center;
+  max-width: 380px;
+  box-shadow: 0 0 80px rgba(124,109,250,0.3), 0 40px 80px rgba(0,0,0,0.7);
+  animation: popIn 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.reward-emoji { font-size: 4rem; margin-bottom: 12px; animation: bounce 0.6s ease 0.3s both; }
+@keyframes bounce {
+  0%   { transform: scale(0) rotate(-15deg); }
+  60%  { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.reward-title {
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.reward-pts {
+  font-family: var(--font-head);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin: 12px 0;
+}
+.reward-badge-line {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--accent2);
+  font-weight: 600;
+}
+.btn-close-reward {
+  margin-top: 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 36px;
+  color: #fff;
+  font-family: var(--font-head);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-close-reward:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--glow); }
+
+/* ── Logout btn ────────────────────────────────────────────────────── */
+.btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 24px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  margin-top: 8px;
+}
+.btn-logout:hover { color: var(--danger); }
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  :root { --sidebar: 60px; }
+  .sidebar-logo-text, .nav-item span:not(.nav-icon), .nav-label,
+  .sidebar-footer .sidebar-user-name, .sidebar-footer .sidebar-pts,
+  .sidebar-footer .sidebar-level, .sidebar-footer .xp-bar-wrap,
+  .btn-logout span { display: none; }
+  .nav-item { justify-content: center; padding: 14px; }
+  .sidebar-logo { padding: 0 0 16px; text-align: center; }
+  .main { padding: 24px 18px; }
+  .stat-grid { grid-template-columns: repeat(2,1fr); }
+  .dash-grid { grid-template-columns: 1fr; }
+  .badges-grid { grid-template-columns: repeat(2,1fr); }
+  .level-grid { grid-template-columns: repeat(3,1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-grid"></div>
+  <div class="login-card">
+    <span class="login-icon">✨</span>
+    <div class="login-logo">TaskLoot</div>
+    <p class="login-sub">Create Your Own Adventure<br>Complete tasks. Earn rewards. Level up.</p>
+    <label class="login-label" for="login-name">Your Name</label>
+    <input class="login-input" id="login-name" type="text" placeholder="e.g. Mishal Fahim" autocomplete="off" maxlength="40">
+    <button class="btn-primary" id="login-btn">Start Earning Rewards →</button>
+    <p class="login-quote">"Productivity is never an accident. It is always the result of a commitment."</p>
+  </div>
+</div>
+
+<!-- ══ APP ══════════════════════════════════════════════════════════ -->
+<div id="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="sidebar-logo-icon">⚡</span>
+      <span class="sidebar-logo-text">TaskLoot</span>
+    </div>
+
+    <span class="nav-label">Menu</span>
+    <div class="nav-item active" data-page="dashboard">
+      <span class="nav-icon">🏠</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" data-page="tasks">
+      <span class="nav-icon">📋</span><span>My Tasks</span>
+    </div>
+    <div class="nav-item" data-page="add-task">
+      <span class="nav-icon">➕</span><span>Add Task</span>
+    </div>
+    <div class="nav-item" data-page="badges">
+      <span class="nav-icon">🏅</span><span>Badges</span>
+    </div>
+    <div class="nav-item" data-page="history">
+      <span class="nav-icon">📜</span><span>History</span>
+    </div>
+    <div class="nav-item" data-page="profile">
+      <span class="nav-icon">👤</span><span>Profile</span>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-name" id="sb-name">—</div>
+      <div class="sidebar-pts" id="sb-pts">0 pts</div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="sb-xp" style="width:0%"></div>
+      </div>
+      <div class="sidebar-level" id="sb-level">Level 1 • 0 / 100 XP</div>
+      <button class="btn-logout" id="logout-btn">
+        <span>🚪</span><span>Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle" id="dash-greeting">Welcome back!</div>
+        </div>
+        <div id="dash-date" style="font-size:0.82rem;color:var(--muted);text-align:right;"></div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card" style="--c1:#7c6dfa;--c2:#a78bfa">
+          <div class="stat-icon">📋</div>
+          <div class="stat-value" id="s-total">0</div>
+          <div class="stat-label">Total Tasks</div>
+        </div>
+        <div class="stat-card" style="--c1:#34d399;--c2:#6ee7b7">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" id="s-done">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card" style="--c1:#fb923c;--c2:#fbbf24">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-value" id="s-pending">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card" style="--c1:#f4c842;--c2:#fde68a">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-value" id="s-pts">0</div>
+          <div class="stat-label">Total Points</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div>
+          <div class="card">
+            <div class="card-title">⏳ Upcoming Tasks</div>
+            <div class="task-list" id="dash-task-list"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">🏅 Recent Badges</div>
+            <div id="dash-badges"></div>
+          </div>
+          <div class="card" style="margin-top:0">
+            <div class="card-title">📈 Quick Stats</div>
+            <div id="dash-quick-stats" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="page" id="page-tasks">
+      <div class="page-header">
+        <div>
+          <div class="page-title">My Tasks</div>
+          <div class="page-subtitle">Manage and complete your tasks</div>
+        </div>
+        <button class="btn-add" onclick="navigate('add-task')">+ Add Task</button>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="done">Completed</button>
+        <button class="filter-btn" data-filter="High">🔴 High</button>
+        <button class="filter-btn" data-filter="Medium">🟠 Medium</button>
+        <button class="filter-btn" data-filter="Low">🟢 Low</button>
+      </div>
+
+      <div class="card">
+        <div class="task-list" id="tasks-list"></div>
+      </div>
+    </div>
+
+    <!-- Add Task -->
+    <div class="page" id="page-add-task">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Add New Task</div>
+          <div class="page-subtitle">Create a task and set your reward points</div>
+        </div>
+      </div>
+      <div class="card" style="max-width:640px">
+        <div class="card-title">📝 Task Details</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label class="form-label">Task Name *</label>
+            <input class="form-input" id="new-name" placeholder="e.g. Complete FSE assignment" maxlength="80">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="new-desc" placeholder="Optional details…"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <div class="priority-pills">
+              <button class="priority-pill" data-p="High">🔴 High</button>
+              <button class="priority-pill active-medium" data-p="Medium">🟠 Medium</button>
+              <button class="priority-pill" data-p="Low">🟢 Low</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input class="form-input" id="new-deadline" type="date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Points Reward</label>
+            <input class="form-input" id="new-pts" type="number" value="20" min="1" max="200">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn-add" id="create-task-btn" style="width:100%">✅ Create Task</button>
+          </div>
+        </div>
+        <div id="form-error" style="color:var(--danger);font-size:0.85rem;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="page" id="page-badges">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Badges & Achievements</div>
+          <div class="page-subtitle">Earn badges by completing tasks and reaching milestones</div>
+        </div>
+        <div id="badges-count" style="font-family:var(--font-head);font-size:1rem;color:var(--gold);font-weight:700"></div>
+      </div>
+      <div class="badges-grid" id="badges-grid"></div>
+    </div>
+
+    <!-- History -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Task History</div>
+          <div class="page-subtitle">All your completed tasks and rewards earned</div>
+        </div>
+        <div id="hist-total" style="font-family:var(--font-head);color:var(--gold);font-weight:700;font-size:1rem"></div>
+      </div>
+      <div class="card">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Priority</th>
+              <th>Points</th>
+              <th>Completed</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+        <div id="history-empty" class="empty-state" style="display:none">
+          <div class="empty-state-icon">📜</div>
+          <div class="empty-state-text">No completed tasks yet. Start completing tasks to build your history!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="page" id="page-profile">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Profile & Stats</div>
+          <div class="page-subtitle">Your productivity overview</div>
+        </div>
+      </div>
+
+      <div class="profile-hero">
+        <div class="profile-avatar">🏆</div>
+        <div style="flex:1">
+          <div class="profile-name" id="prof-name">—</div>
+          <div class="profile-level" id="prof-level">Level 1</div>
+          <div class="profile-xp-row">
+            <div class="profile-xp-bar-wrap">
+              <div class="profile-xp-bar" id="prof-xp-bar" style="width:0%"></div>
+            </div>
+            <span class="profile-xp-label" id="prof-xp-label">0 / 100 XP</span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-head);font-size:2.4rem;font-weight:800;color:var(--gold)" id="prof-pts">0</div>
+          <div style="font-size:0.78rem;color:var(--muted)">total points</div>
+          <div style="margin-top:8px;font-size:0.82rem;color:var(--text)" id="prof-badges-count">0 badges</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 Level Progression</div>
+        <div class="level-grid" id="level-grid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📈 Productivity Stats</div>
+        <div id="prod-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Reward Modal -->
+<div id="reward-modal">
+  <div class="reward-box">
+    <div class="reward-emoji" id="reward-emoji">🎉</div>
+    <div class="reward-title" id="reward-title">Task Complete!</div>
+    <div class="reward-pts" id="reward-pts">+20 pts</div>
+    <div style="font-size:0.85rem;color:var(--muted)" id="reward-total"></div>
+    <div class="reward-badge-line" id="reward-badges"></div>
+    <button class="btn-close-reward" id="close-reward">Awesome! 🚀</button>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════════════════════════════
+const BADGE_DEFS = [
+  { id:'first_step',   name:'First Step',     icon:'🌱', desc:'Complete your first task',    req_tasks:1 },
+  { id:'on_a_roll',    name:'On a Roll',       icon:'🔥', desc:'Complete 5 tasks',            req_tasks:5 },
+  { id:'productive',   name:'Productive',      icon:'⚡', desc:'Complete 10 tasks',           req_tasks:10 },
+  { id:'achiever',     name:'Achiever',        icon:'🏆', desc:'Complete 25 tasks',           req_tasks:25 },
+  { id:'legend',       name:'Legend',          icon:'👑', desc:'Complete 50 tasks',           req_tasks:50 },
+  { id:'century',      name:'Century',         icon:'💯', desc:'Earn 100 points',             req_pts:100 },
+  { id:'high_scorer',  name:'High Scorer',     icon:'🎯', desc:'Earn 500 points',             req_pts:500 },
+  { id:'point_master', name:'Point Master',    icon:'💎', desc:'Earn 1000 points',            req_pts:1000 },
+  { id:'streak_3',     name:'3-Day Streak',    icon:'🗓️', desc:'Complete tasks 3 days in a row', req_streak:3 },
+  { id:'high_prio',    name:'High Achiever',   icon:'🚀', desc:'Complete 5 High-priority tasks',req_high:5 },
+  { id:'speed_demon',  name:'Speed Demon',     icon:'⏱️', desc:'Complete a task before its deadline', req_early:1 },
+  { id:'collector',    name:'Badge Collector', icon:'🗝️', desc:'Earn 5 badges',               req_badges:5 },
+];
+
+const LEVELS = [
+  { level:1, pts:0    },
+  { level:2, pts:100  },
+  { level:3, pts:250  },
+  { level:4, pts:500  },
+  { level:5, pts:1000 },
+];
+
+const PRIORITY_PTS = { High:30, Medium:20, Low:10 };
+
+function loadState() {
+  const raw = localStorage.getItem('taskRewardState');
+  if (raw) { try { return JSON.parse(raw); } catch(e){} }
+  return null;
+}
+function saveState() { localStorage.setItem('taskRewardState', JSON.stringify(STATE)); }
+
+let STATE = {
+  user: { name:'', totalPoints:0, tasksCompleted:0, badgesEarned:[], history:[], nextId:1, streak:0, lastCompletedDate:null, highPrioCompleted:0, earlyCompleted:0 },
+  tasks: []
+};
+
+function initState(name) {
+  STATE = {
+    user: { name, totalPoints:0, tasksCompleted:0, badgesEarned:[], history:[], nextId:1, streak:0, lastCompletedDate:null, highPrioCompleted:0, earlyCompleted:0 },
+    tasks: []
+  };
+  saveState();
+}
+
+// ── Level helpers ────────────────────────────────────────────────────
+function getLevel(pts) {
+  let lv = 1;
+  for (const l of LEVELS) { if (pts >= l.pts) lv = l.level; }
+  return lv;
+}
+function nextLevelPts(pts) {
+  for (const l of LEVELS) { if (l.pts > pts) return l.pts; }
+  return null; // max level
+}
+function levelProgress(pts) {
+  const lv = getLevel(pts);
+  const cur = LEVELS[lv-1].pts;
+  const nxt = nextLevelPts(pts);
+  if (!nxt) return 100;
+  return Math.round(((pts - cur) / (nxt - cur)) * 100);
+}
+
+// ── Badge check ──────────────────────────────────────────────────────
+function checkBadges() {
+  const u = STATE.user;
+  const newBadges = [];
+  for (const b of BADGE_DEFS) {
+    if (u.badgesEarned.includes(b.id)) continue;
+    let earned = false;
+    if (b.req_tasks  && u.tasksCompleted    >= b.req_tasks)  earned = true;
+    if (b.req_pts    && u.totalPoints       >= b.req_pts)    earned = true;
+    if (b.req_streak && u.streak            >= b.req_streak) earned = true;
+    if (b.req_high   && u.highPrioCompleted >= b.req_high)   earned = true;
+    if (b.req_early  && u.earlyCompleted    >= b.req_early)  earned = true;
+    if (b.req_badges && u.badgesEarned.length >= b.req_badges - 1) earned = true; // after adding
+    if (earned) { u.badgesEarned.push(b.id); newBadges.push(b); }
+  }
+  return newBadges;
+}
+
+// ── Streak update ────────────────────────────────────────────────────
+function updateStreak() {
+  const today = new Date().toDateString();
+  const u = STATE.user;
+  if (u.lastCompletedDate === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  if (u.lastCompletedDate === yesterday) { u.streak++; }
+  else { u.streak = 1; }
+  u.lastCompletedDate = today;
+}
+
+// ── Task ops ─────────────────────────────────────────────────────────
+function createTask({ name, desc, priority, deadline, points }) {
+  const task = {
+    id: STATE.user.nextId++,
+    name, desc, priority,
+    deadline: deadline || '',
+    points: parseInt(points) || PRIORITY_PTS[priority] || 20,
+    done: false,
+    createdAt: new Date().toISOString(),
+    completedAt: null
+  };
+  STATE.tasks.unshift(task);
+  saveState();
+  return task;
+}
+
+function completeTask(id) {
+  const task = STATE.tasks.find(t => t.id === id);
+  if (!task || task.done) return null;
+  task.done = true;
+  task.completedAt = new Date().toISOString();
+
+  const u = STATE.user;
+  u.totalPoints += task.points;
+  u.tasksCompleted++;
+  if (task.priority === 'High') u.highPrioCompleted++;
+
+  // early completion bonus
+  if (task.deadline) {
+    const dl = new Date(task.deadline);
+    const now = new Date();
+    if (now <= dl) { u.earlyCompleted++; }
+  }
+
+  updateStreak();
+
+  u.history.unshift({
+    taskId: task.id,
+    name: task.name,
+    priority: task.priority,
+    points: task.points,
+    completedAt: task.completedAt
+  });
+
+  const newBadges = checkBadges();
+  saveState();
+  return { task, newBadges };
+}
+
+function deleteTask(id) {
+  STATE.tasks = STATE.tasks.filter(t => t.id !== id);
+  saveState();
+}
+
+// ── Utility ──────────────────────────────────────────────────────────
+function isOverdue(task) {
+  if (!task.deadline || task.done) return false;
+  return new Date(task.deadline) < new Date();
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UI LAYER
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Toast ────────────────────────────────────────────────────────────
+function toast(title, msg='', type='info') {
+  const icons = { success:'✅', info:'ℹ️', warning:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span>
+    <div class="toast-body"><div class="toast-title">${title}</div>${msg?`<div class="toast-msg">${msg}</div>`:''}</div>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 350); }, 3500);
+}
+
+// ── Reward Modal ─────────────────────────────────────────────────────
+function showReward(task, newBadges) {
+  document.getElementById('reward-emoji').textContent = newBadges.length ? '🎊' : '🎉';
+  document.getElementById('reward-title').textContent = newBadges.length ? 'Achievement Unlocked!' : 'Task Complete!';
+  document.getElementById('reward-pts').textContent = `+${task.points} pts`;
+  document.getElementById('reward-total').textContent = `Total: ${STATE.user.totalPoints} pts • Level ${getLevel(STATE.user.totalPoints)}`;
+  const bl = document.getElementById('reward-badges');
+  if (newBadges.length) {
+    bl.innerHTML = newBadges.map(b => `${b.icon} <strong>${b.name}</strong>`).join(' &nbsp; ');
+    bl.style.display = '';
+  } else {
+    bl.style.display = 'none';
+  }
+  document.getElementById('reward-modal').classList.add('open');
+}
+
+document.getElementById('close-reward').onclick = () => {
+  document.getElementById('reward-modal').classList.remove('open');
+  refreshAll();
+};
+
+// ── Navigation ────────────────────────────────────────────────────────
+function navigate(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-'+pageId);
+  if (pg) pg.classList.add('active');
+  const ni = document.querySelector(`[data-page="${pageId}"]`);
+  if (ni) ni.classList.add('active');
+  renderPage(pageId);
+}
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => navigate(el.dataset.page));
+});
+
+function renderPage(id) {
+  switch(id) {
+    case 'dashboard': renderDashboard(); break;
+    case 'tasks':     renderTasks(); break;
+    case 'badges':    renderBadges(); break;
+    case 'history':   renderHistory(); break;
+    case 'profile':   renderProfile(); break;
+    case 'add-task':  break;
+  }
+}
+
+// ── Sidebar update ────────────────────────────────────────────────────
+function updateSidebar() {
+  const u = STATE.user;
+  const pts = u.totalPoints;
+  const lv = getLevel(pts);
+  const pct = levelProgress(pts);
+  const nxt = nextLevelPts(pts);
+  document.getElementById('sb-name').textContent = u.name;
+  document.getElementById('sb-pts').textContent = `${pts} pts`;
+  document.getElementById('sb-xp').style.width = pct + '%';
+  document.getElementById('sb-level').textContent = nxt
+    ? `Level ${lv} • ${pts - LEVELS[lv-1].pts} / ${nxt - LEVELS[lv-1].pts} XP`
+    : `Level ${lv} • MAX`;
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────
+function renderDashboard() {
+  const u = STATE.user;
+  const tasks = STATE.tasks;
+  const done = tasks.filter(t=>t.done).length;
+  const pending = tasks.filter(t=>!t.done).length;
+
+  document.getElementById('dash-greeting').textContent = `Welcome back, ${u.name}! 👋`;
+  document.getElementById('dash-date').innerHTML =
+    `${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}<br>
+     <span style="color:var(--accent2);font-family:var(--font-head);font-weight:700">Streak: 🔥 ${u.streak} day${u.streak!==1?'s':''}</span>`;
+
+  document.getElementById('s-total').textContent   = tasks.length;
+  document.getElementById('s-done').textContent    = done;
+  document.getElementById('s-pending').textContent = pending;
+  document.getElementById('s-pts').textContent     = u.totalPoints;
+
+  // Pending tasks preview
+  const ptasks = tasks.filter(t=>!t.done).slice(0,5);
+  const dtl = document.getElementById('dash-task-list');
+  if (ptasks.length === 0) {
+    dtl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎉</div><div class="empty-state-text">All caught up! No pending tasks.</div></div>`;
+  } else {
+    dtl.innerHTML = ptasks.map(t => taskCardHTML(t, true)).join('');
+    attachTaskEvents(dtl);
+  }
+
+  // Recent badges
+  const db = document.getElementById('dash-badges');
+  const earned = BADGE_DEFS.filter(b => u.badgesEarned.includes(b.id)).slice(-4);
+  if (earned.length === 0) {
+    db.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;padding:8px 0">Complete tasks to earn your first badge!</div>`;
+  } else {
+    db.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px">${earned.map(b=>`
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:8px;padding:8px 12px;font-size:0.8rem">
+        <span style="font-size:1.3rem">${b.icon}</span>
+        <span style="font-family:var(--font-head);font-weight:600;color:var(--text)">${b.name}</span>
+      </div>`).join('')}</div>`;
+  }
+
+  // Quick stats
+  const qs = document.getElementById('dash-quick-stats');
+  const hpct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+  const hp = tasks.filter(t=>t.priority==='High'&&!t.done).length;
+  qs.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">
+      <span style="color:var(--muted)">Completion Rate</span>
+      <span style="font-family:var(--font-head);font-weight:700;color:var(--accent2)">${hpct}%</span>
+    </div>
+    <div style="background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;margin:-4px 0 4px">
+      <div style="height:100%;width:${hpct}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width 0.6s ease"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">
+      <span style="color:var(--muted)">High Priority Left</span>
+      <span style="font-family:var(--font-head);font-weight:700;color:${hp>0?'var(--danger)':'var(--success)'}">${hp}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">
+      <span style="color:var(--muted)">Badges Earned</span>
+      <span style="font-family:var(--font-head);font-weight:700;color:var(--gold)">${u.badgesEarned.length} / ${BADGE_DEFS.length}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem">
+      <span style="color:var(--muted)">Level</span>
+      <span style="font-family:var(--font-head);font-weight:700;color:var(--accent2)">⚡ ${getLevel(u.totalPoints)}</span>
+    </div>`;
+}
+
+// ── Tasks ─────────────────────────────────────────────────────────────
+let currentFilter = 'all';
+function renderTasks() {
+  let tasks = STATE.tasks;
+  if (currentFilter === 'pending') tasks = tasks.filter(t=>!t.done);
+  else if (currentFilter === 'done') tasks = tasks.filter(t=>t.done);
+  else if (['High','Medium','Low'].includes(currentFilter)) tasks = tasks.filter(t=>t.priority===currentFilter&&!t.done);
+
+  const tl = document.getElementById('tasks-list');
+  if (tasks.length === 0) {
+    tl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">No tasks here. Add some tasks to get started!</div></div>`;
+  } else {
+    tl.innerHTML = tasks.map(t=>taskCardHTML(t, false)).join('');
+    attachTaskEvents(tl);
+  }
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderTasks();
+  });
+});
+
+function taskCardHTML(task, mini=false) {
+  const od = isOverdue(task);
+  const prio = task.priority;
+  const deadlineDisplay = task.deadline ? `📅 ${fmtDate(task.deadline+('T00:00:00'))}` : '';
+  const overdueTag = od ? `<span class="task-badge badge-overdue">Overdue</span>` : '';
+  const prioTag = `<span class="task-badge badge-${prio.toLowerCase()}">${prio}</span>`;
+  const doneAttr = task.done ? 'checked' : '';
+  return `<div class="task-card priority-${prio} ${task.done?'done':''}" data-id="${task.id}">
+    <div class="task-check ${task.done?'checked':''}" data-complete="${task.id}"></div>
+    <div class="task-body">
+      <div class="task-name">${esc(task.name)}</div>
+      <div class="task-meta">
+        ${deadlineDisplay ? `<span>${deadlineDisplay}</span>` : ''}
+        ${task.desc ? `<span title="${esc(task.desc)}">📄 ${esc(task.desc.slice(0,40))}${task.desc.length>40?'…':''}</span>` : ''}
+      </div>
+    </div>
+    ${overdueTag}${prioTag}
+    <span class="task-pts">⭐ ${task.points}</span>
+    ${!task.done ? `<button class="btn-delete" data-delete="${task.id}" title="Delete">🗑</button>` : ''}
+  </div>`;
+}
+
+function attachTaskEvents(container) {
+  container.querySelectorAll('[data-complete]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = parseInt(el.dataset.complete);
+      const result = completeTask(id);
+      if (!result) return;
+      showReward(result.task, result.newBadges);
+      updateSidebar();
+    });
+  });
+  container.querySelectorAll('[data-delete]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = parseInt(el.dataset.delete);
+      deleteTask(id);
+      renderTasks();
+      toast('Task Deleted', '', 'warning');
+    });
+  });
+}
+
+// ── Add Task ──────────────────────────────────────────────────────────
+let selectedPriority = 'Medium';
+document.querySelectorAll('.priority-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    selectedPriority = pill.dataset.p;
+    document.querySelectorAll('.priority-pill').forEach(p => p.className = 'priority-pill');
+    pill.classList.add(`active-${pill.dataset.p.toLowerCase()}`);
+    const pts = PRIORITY_PTS[selectedPriority];
+    document.getElementById('new-pts').value = pts;
+  });
+});
+
+document.getElementById('create-task-btn').addEventListener('click', () => {
+  const name = document.getElementById('new-name').value.trim();
+  const desc = document.getElementById('new-desc').value.trim();
+  const deadline = document.getElementById('new-deadline').value;
+  const points = document.getElementById('new-pts').value;
+  const err = document.getElementById('form-error');
+
+  if (!name) { err.textContent = '⚠ Task name is required.'; return; }
+  err.textContent = '';
+
+  createTask({ name, desc, priority: selectedPriority, deadline, points });
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-desc').value = '';
+  document.getElementById('new-deadline').value = '';
+  document.getElementById('new-pts').value = PRIORITY_PTS[selectedPriority];
+
+  toast('Task Created!', `"${name}" added successfully.`, 'success');
+  navigate('tasks');
+});
+
+// ── Badges ───────────────────────────────────────────────────────────
+function renderBadges() {
+  const earned = STATE.user.badgesEarned;
+  document.getElementById('badges-count').textContent = `${earned.length} / ${BADGE_DEFS.length} earned`;
+  document.getElementById('badges-grid').innerHTML = BADGE_DEFS.map(b => {
+    const isEarned = earned.includes(b.id);
+    const req = b.req_tasks ? `Complete ${b.req_tasks} tasks`
+              : b.req_pts   ? `Earn ${b.req_pts} pts`
+              : b.req_streak? `${b.req_streak}-day streak`
+              : b.req_high  ? `${b.req_high} High-priority done`
+              : b.req_early ? `Complete a task early`
+              : b.req_badges? `Earn ${b.req_badges} badges`
+              : '';
+    return `<div class="badge-card ${isEarned?'earned':''}">
+      ${isEarned
+        ? `<div class="badge-earned-check">✓</div>`
+        : `<div class="badge-locked-icon">🔒</div>`}
+      <span class="badge-card-icon">${b.icon}</span>
+      <div class="badge-card-name">${b.name}</div>
+      <div class="badge-card-desc">${b.desc}</div>
+      <div class="badge-card-req">${req}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── History ───────────────────────────────────────────────────────────
+function renderHistory() {
+  const hist = STATE.user.history;
+  const tbody = document.getElementById('history-body');
+  const empty = document.getElementById('history-empty');
+  const total = hist.reduce((s,h)=>s+h.points,0);
+  document.getElementById('hist-total').textContent = `⭐ ${total} total points earned`;
+
+  if (hist.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+  } else {
+    empty.style.display = 'none';
+    const PCOL = { High:'var(--danger)', Medium:'var(--warning)', Low:'var(--success)' };
+    tbody.innerHTML = hist.map(h => `
+      <tr>
+        <td><strong>${esc(h.name)}</strong></td>
+        <td><span style="color:${PCOL[h.priority]||'var(--muted)'}">● ${h.priority}</span></td>
+        <td class="pts-cell">+${h.points} pts</td>
+        <td style="color:var(--muted)">${fmtDateTime(h.completedAt)}</td>
+      </tr>`).join('');
+  }
+}
+
+// ── Profile ───────────────────────────────────────────────────────────
+function renderProfile() {
+  const u = STATE.user;
+  const pts = u.totalPoints;
+  const lv = getLevel(pts);
+  const pct = levelProgress(pts);
+  const nxt = nextLevelPts(pts);
+  const tasks = STATE.tasks;
+  const done = tasks.filter(t=>t.done).length;
+
+  document.getElementById('prof-name').textContent = u.name;
+  document.getElementById('prof-level').textContent = `Level ${lv}`;
+  document.getElementById('prof-xp-bar').style.width = pct+'%';
+  document.getElementById('prof-xp-label').textContent = nxt
+    ? `${pts - LEVELS[lv-1].pts} / ${nxt - LEVELS[lv-1].pts} XP`
+    : 'MAX LEVEL';
+  document.getElementById('prof-pts').textContent = pts;
+  document.getElementById('prof-badges-count').textContent = `🏅 ${u.badgesEarned.length} badges earned`;
+
+  // Level grid
+  const lg = document.getElementById('level-grid');
+  lg.innerHTML = LEVELS.map(l => {
+    const unlocked = pts >= l.pts;
+    const current  = lv === l.level;
+    return `<div class="level-card ${current?'current-level':''} ${unlocked?'unlocked':''}">
+      <div class="level-card-num">Lv ${l.level}</div>
+      <div class="level-card-pts">${l.pts} pts${current?' ✓':''}</div>
+    </div>`;
+  }).join('');
+
+  // Prod stats
+  const od = tasks.filter(t=>isOverdue(t)).length;
+  const hpct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+  const ps = document.getElementById('prod-stats');
+  ps.innerHTML = [
+    ['Tasks Done',       done,            'var(--success)'],
+    ['Completion %',     hpct+'%',        'var(--accent2)'],
+    ['Overdue',          od,              od>0?'var(--danger)':'var(--success)'],
+    ['🔥 Streak',        u.streak+' days','var(--warning)'],
+    ['High Prio Done',   u.highPrioCompleted, 'var(--danger)'],
+    ['Early Completions',u.earlyCompleted, 'var(--success)'],
+  ].map(([l,v,c])=>`
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px;text-align:center">
+      <div style="font-family:var(--font-head);font-size:1.6rem;font-weight:800;color:${c}">${v}</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">${l}</div>
+    </div>`).join('');
+}
+
+// ── Refresh all ────────────────────────────────────────────────────────
+function refreshAll() {
+  updateSidebar();
+  const active = document.querySelector('.page.active');
+  if (active) {
+    const id = active.id.replace('page-','');
+    renderPage(id);
+  }
+}
+
+// ── Escape HTML ────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════════
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  updateSidebar();
+  navigate('dashboard');
+}
+
+document.getElementById('login-btn').addEventListener('click', () => {
+  const name = document.getElementById('login-name').value.trim();
+  if (!name) { document.getElementById('login-name').style.borderColor = 'var(--danger)'; return; }
+  document.getElementById('login-name').style.borderColor = '';
+
+  // Check existing save
+  const saved = loadState();
+  if (saved && saved.user && saved.user.name === name) {
+    STATE = saved;
+    toast('Welcome back!', `Good to see you again, ${name}!`, 'success');
+  } else {
+    if (saved && saved.user && saved.user.name !== name) {
+      // different user — fresh start
+      initState(name);
+      toast('New Profile', `Started fresh for ${name}!`, 'info');
+    } else if (!saved) {
+      initState(name);
+      toast('Welcome!', `Let's get productive, ${name}!`, 'success');
+    } else {
+      STATE = saved;
+    }
+  }
+  showApp();
+});
+
+document.getElementById('login-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  saveState();
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-name').value = '';
+});
+
+// Auto-login if state exists
+window.addEventListener('load', () => {
+  const saved = loadState();
+  if (saved && saved.user && saved.user.name) {
+    STATE = saved;
+    document.getElementById('login-name').value = saved.user.name;
+  }
+});
+</script>
+</body>
+</html>

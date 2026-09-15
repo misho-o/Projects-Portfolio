@@ -1,0 +1,88 @@
+import streamlit as st
+import networkx as nx
+import folium
+from streamlit_folium import folium_static
+from folium.plugins import AntPath
+
+# --- 1. CAMPUS DATA SETUP ---
+# IMPORTANT: Replace these Lat/Long with your actual campus building coordinates from Google Maps!
+locations = {
+    "Main Building": [24.8607, 67.0011],
+    "Science Lab": [24.8615, 67.0015],
+    "Accounts Office": [24.8610, 67.0025],
+    "Football Ground 1": [24.8605, 67.0020],
+    "Football Ground 2": [24.8602, 67.0018]
+}
+
+# Define connections (Edges) and distances (Weights in meters)
+G = nx.Graph()
+G.add_edge("Main Building", "Science Lab", weight=50)
+G.add_edge("Science Lab", "Accounts Office", weight=70)
+G.add_edge("Accounts Office", "Football Ground 1", weight=40)
+G.add_edge("Football Ground 1", "Football Ground 2", weight=30)
+G.add_edge("Main Building", "Football Ground 2", weight=100)
+
+# --- 2. STREAMLIT UI ---
+st.set_page_config(page_title="AI Campus Pro", layout="wide")
+st.title("📍 Smart Campus Task Optimizer")
+st.markdown("This AI prototype uses **Dijkstra's Algorithm** to find the most efficient route for your tasks.")
+
+# Sidebar for inputs
+st.sidebar.header("User Input")
+start_point = st.sidebar.selectbox("Current Location:", options=list(locations.keys()))
+selected_tasks = st.sidebar.multiselect("Select Tasks/Buildings to visit:", 
+                                        options=[loc for loc in locations.keys() if loc != start_point])
+
+# --- 3. EXECUTION LOGIC ---c
+if st.sidebar.button("Find Optimal Route"):
+    if not selected_tasks:
+        st.error("Please select at least one destination!")
+    else:
+        # AI OPTIMIZATION (Greedy Nearest Neighbor Approach)
+        current = start_point
+        unvisited = list(selected_tasks)
+        full_route = [start_point]
+        total_dist = 0
+
+        while unvisited:
+            # Find the nearest task from current position using Dijkstra
+            next_destination = min(unvisited, key=lambda t: nx.shortest_path_length(G, current, t, weight='weight'))
+            
+            # Get the path segments
+            path_segment = nx.shortest_path(G, current, next_destination, weight='weight')
+            total_dist += nx.shortest_path_length(G, current, next_destination, weight='weight')
+            
+            # Add to route (exclude first node to avoid duplicates)
+            full_route.extend(path_segment[1:])
+            
+            current = next_destination
+            unvisited.remove(next_destination)
+
+        # --- 4. RESULTS DISPLAY ---
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            st.subheader("📋 Journey Plan")
+            st.write(f"**Total Distance:** {total_dist} meters")
+            for i, step in enumerate(full_route):
+                st.write(f"{i+1}. {step}")
+
+        with col2:
+            st.subheader("🗺️ Live Map")
+            # Create Map centered on start
+            m = folium.Map(location=locations[start_point], zoom_start=19, tiles="OpenStreetMap")
+
+            # Add Markers for all locations
+            for name, coords in locations.items():
+                icon_color = "green" if name == start_point else "blue"
+                if name in selected_tasks: icon_color = "red"
+                folium.Marker(location=coords, popup=name, icon=folium.Icon(color=icon_color)).add_to(m)
+
+            # Draw Animated Path
+            route_coords = [locations[node] for node in full_route]
+            AntPath(locations=route_coords, dash_array=[1, 10], delay=1000, color="blue", weight=5).add_to(m)
+
+            # Display the map stably
+            folium_static(m)
+else:
+    st.info("Waiting for input... Use the sidebar to select your starting point and tasks.")

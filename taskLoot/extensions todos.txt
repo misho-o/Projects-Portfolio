@@ -1,0 +1,491 @@
+You already built MOST of what a browser extension needs.
+
+Your app is basically:
+
+* HTML
+* CSS
+* JavaScript
+* localStorage
+
+That is PERFECT for a Chrome extension.
+
+The easiest path is:
+
+# TURN THIS INTO A POPUP EXTENSION
+
+Like:
+
+* Todoist extension
+* Momentum extension
+* Notion Web Clipper
+
+---
+
+# HOW CHROME EXTENSIONS WORK
+
+A Chrome extension is basically:
+
+```text id="ul2r3x"
+manifest.json
+popup.html
+popup.js
+popup.css
+icons/
+```
+
+Your project already has:
+
+* popup.html
+* popup.css
+* popup.js
+
+because your code is all in ONE file.
+
+So you're 70% done already.
+
+---
+
+# STEP 1 — CREATE FOLDER
+
+Make folder:
+
+```text id="r5nnw5"
+taskreward-extension
+```
+
+Inside it create:
+
+```text id="pd3h7e"
+manifest.json
+popup.html
+popup.js
+styles.css
+```
+
+---
+
+# STEP 2 — SPLIT YOUR FILE
+
+Right now everything is inside ONE HTML file.
+
+You need to separate it.
+
+---
+
+# popup.html
+
+Keep:
+
+```html id="ij9slm"
+<!DOCTYPE html>
+<html>
+<head>
+```
+
+AND
+
+```html id="ayq6w0"
+<body>
+```
+
+But REMOVE:
+
+* `<style>`
+* `<script>`
+
+because they go into separate files.
+
+Then add:
+
+```html id="jlwm5q"
+<link rel="stylesheet" href="styles.css">
+<script src="popup.js"></script>
+```
+
+---
+
+# STEP 3 — MOVE CSS
+
+Everything inside:
+
+```html id="zh4f98"
+<style>
+```
+
+goes into:
+
+```text id="3m2gg6"
+styles.css
+```
+
+---
+
+# STEP 4 — MOVE JS
+
+Everything inside:
+
+```html id="74jqh8"
+<script>
+```
+
+goes into:
+
+```text id="6nvlx4"
+popup.js
+```
+
+---
+
+# STEP 5 — CREATE manifest.json
+
+MOST IMPORTANT FILE.
+
+Create:
+
+```json id="jknb7g"
+{
+  "manifest_version": 3,
+  "name": "TaskReward",
+  "version": "1.0",
+  "description": "Gamified productivity extension",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "storage"
+  ]
+}
+```
+
+---
+
+# WHY THIS FILE EXISTS
+
+Chrome reads this file to know:
+
+* extension name
+* popup page
+* permissions
+* icons
+* scripts
+
+Think of it like:
+
+> package.json for extensions
+
+---
+
+# STEP 6 — CHANGE localStorage
+
+Extensions SHOULD use:
+
+```js id="r9x0l0"
+chrome.storage.local
+```
+
+instead of:
+
+```js id="svlx5k"
+localStorage
+```
+
+---
+
+# WHY?
+
+Because:
+
+* safer
+* synced properly
+* Chrome extension standard
+
+---
+
+# YOUR CURRENT CODE
+
+```js id="z3sl44"
+localStorage.setItem()
+```
+
+---
+
+# REPLACE WITH
+
+```js id="scg94e"
+chrome.storage.local.set({
+  taskRewardState: STATE
+});
+```
+
+---
+
+# LOAD DATA
+
+Instead of:
+
+```js id="6j6zdu"
+localStorage.getItem()
+```
+
+Use:
+
+```js id="f7grko"
+chrome.storage.local.get(["taskRewardState"], (result) => {
+   console.log(result.taskRewardState);
+});
+```
+
+---
+
+# STEP 7 — LOAD EXTENSION
+
+Open:
+
+```text id="0xanmg"
+chrome://extensions
+```
+
+Enable:
+
+* Developer Mode
+
+Click:
+
+* Load unpacked
+
+Choose:
+
+* taskreward-extension folder
+
+DONE.
+
+---
+
+# WHAT HAPPENS NOW
+
+You click extension icon:
+
+↓
+
+Popup opens
+
+↓
+
+Your app runs inside browser toolbar.
+
+---
+
+# BUT THERE'S A PROBLEM
+
+Your current UI is HUGE.
+
+Chrome popup size is SMALL.
+
+Usually:
+
+* 300–400px width
+* 500–600px height
+
+So you need to shrink layout.
+
+---
+
+# QUICK FIX
+
+Add:
+
+```css id="rx5hfr"
+body {
+  width: 380px;
+  min-height: 600px;
+}
+```
+
+AND reduce sidebar.
+
+---
+
+# BETTER IDEA
+
+Instead of sidebar:
+
+Use:
+
+* tabs
+* bottom navigation
+* stacked sections
+
+Like mobile apps.
+
+---
+
+# REAL EXTENSION ARCHITECTURE
+
+Extensions usually have:
+
+| File          | Purpose               |
+| ------------- | --------------------- |
+| popup.html    | Main UI               |
+| popup.js      | UI logic              |
+| background.js | Runs in background    |
+| content.js    | Injects into websites |
+| manifest.json | Extension config      |
+
+---
+
+# WHAT YOU CAN ADD NEXT
+
+NOW it gets COOL.
+
+---
+
+# FEATURE 1 — Website Blocker
+
+Block YouTube during work.
+
+Use:
+
+```json id="rbjlwm"
+"permissions": ["tabs"]
+```
+
+Then detect tabs.
+
+---
+
+# FEATURE 2 — Productivity Timer
+
+Add Pomodoro.
+
+---
+
+# FEATURE 3 — AI Task Breakdown
+
+Use:
+[OpenAI API Platform](https://platform.openai.com?utm_source=chatgpt.com)
+
+Example:
+
+```text id="8kl7vr"
+"Study DSA"
+↓
+AI generates subtasks
+```
+
+---
+
+# FEATURE 4 — Daily Notifications
+
+Use:
+
+```js id="v77h5u"
+chrome.notifications.create()
+```
+
+---
+
+# FEATURE 5 — Sync Across Devices
+
+Use:
+
+* Firebase
+  OR
+* Supabase
+
+---
+
+# FEATURE 6 — Context Menu
+
+Right click webpage:
+
+```text id="j9cw2r"
+Add as task
+```
+
+VERY cool portfolio feature.
+
+---
+
+# FEATURE 7 — Streak Wallpaper
+
+Dynamic backgrounds based on productivity.
+
+---
+
+# MOST IMPORTANT THING TO UNDERSTAND
+
+Browser extensions are basically:
+
+```text id="jlwm6x"
+mini web apps
+```
+
+That’s it.
+
+Everything you already know:
+
+* HTML
+* CSS
+* JS
+  works directly.
+
+---
+
+# BEST LEARNING PATH FOR YOU
+
+## Phase 1
+
+Convert current app into popup extension.
+
+---
+
+## Phase 2
+
+Learn:
+
+* manifest v3
+* chrome APIs
+* storage API
+
+---
+
+## Phase 3
+
+Add:
+
+* notifications
+* tabs
+* alarms
+* AI
+
+---
+
+# YOUR PROJECT IS ALREADY PORTFOLIO LEVEL
+
+If you:
+
+* polish UI
+* make extension
+* deploy
+* add AI feature
+
+This becomes:
+
+> internship-quality project
+
+Especially for frontend roles.
+
+---
+
+# BIGGEST ADVICE
+
+DON'T rewrite everything.
+
+Just:
+
+1. Split files
+2. Add manifest
+3. Replace storage
+4. Resize UI
+
+That’s enough for V1.
